@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from beartype.typing import List
+from beartype.typing import List, Tuple
 from abc import abstractmethod
+import numpy as np
 import torch
 
 from .bond import AbstractBond, SymBond, Bond
@@ -13,6 +14,12 @@ class AbstractUniTensor:
     bonds: List[AbstractBond]
     backend_args: dict = field(default_factory=dict)
 
+    def _permute_meta(self, *args) -> Tuple[List[str], List[AbstractBond]]:
+        args = list(args)
+        new_labels = np.array(self.labels)[args]
+        new_bonds = np.array(self.bonds)[args]
+        return new_labels, new_bonds
+
     @property
     def rank(self) -> int:
         return len(self.labels)
@@ -24,6 +31,10 @@ class AbstractUniTensor:
     @property
     @abstractmethod
     def is_sym(self) -> bool:
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    @abstractmethod
+    def permute(self, *args, by_label: bool = True) -> "AbstractUniTensor":
         raise NotImplementedError("not implement for abstract type trait.")
 
 
@@ -43,6 +54,19 @@ class RegularUniTensor(AbstractUniTensor):
     def is_sym(self) -> bool:
         return False
 
+    def permute(self, *args, by_label: bool = True) -> "RegularUniTensor":
+
+        if by_label:
+            args = [self.labels.index(lbl) for lbl in args]
+
+        new_labels, new_bonds = self._permute_meta(*args)
+        return RegularUniTensor(
+            labels=new_labels,
+            bonds=new_bonds,
+            backend_args=self.backend_args,
+            data=self.data.permute(*args),
+        )
+
 
 @dataclass
 class BlockUniTensor(AbstractUniTensor):
@@ -56,6 +80,20 @@ class BlockUniTensor(AbstractUniTensor):
     @property
     def is_sym(self) -> bool:
         return True
+
+    def permute(self, *args, by_label: bool = True) -> "BlockUniTensor":
+
+        if by_label:
+            args = [self.labels.index(lbl) for lbl in args]
+
+        new_labels, new_bonds = self._permute_meta(*args)
+        new_blocks = [x.permute(*args) for x in self.blocks]
+        return BlockUniTensor(
+            labels=new_labels,
+            bonds=new_bonds,
+            backend_args=self.backend_args,
+            blocks=new_blocks,
+        )
 
 
 # User API:
