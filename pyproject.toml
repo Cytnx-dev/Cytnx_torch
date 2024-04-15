@@ -12,12 +12,20 @@ dependencies = [
     "numpy>=1.26.4",
     "scipy>=1.13.0",
     "beartype>=0.18.2",
+    "pytest>=8.1.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
 
-[project.scripts]
-hello = "cytnx_torch:hello"
+[tool.rye.scripts]
+clean = "git clean -f"
+"coverage:run" = "coverage run -m pytest test"
+"coverage:xml" = "coverage xml"
+"coverage:html" = "coverage html"
+"coverage:report" = "coverage report"
+"coverage:open" = "open htmlcov/index.html"
+"coverage:github" = { chain = ["coverage:run", "coverage:xml", "coverage:report"]}
+"test:all" = "pytest test"
 
 [build-system]
 requires = ["hatchling"]
@@ -42,10 +50,6 @@ dev-dependencies = [
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/cytnx_torch"]
-
 
 [tool.black]
 line-length = 88
