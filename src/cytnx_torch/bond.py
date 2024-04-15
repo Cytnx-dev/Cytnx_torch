@@ -43,6 +43,7 @@ class Bond(AbstractBond):
 class SymBond(AbstractBond):
 
     # The following only works for bond with symmetry:
+    # For better performance we convert Qs to numpy array instead of using List[Qs]
     _degs: np.ndarray[int] = field(
         default_factory=lambda: np.ndarray(shape=(0,), dtype=np.int64)
     )
