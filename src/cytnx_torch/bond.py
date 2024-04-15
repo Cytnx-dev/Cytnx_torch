@@ -2,6 +2,7 @@ import numpy as np
 from dataclasses import dataclass, field
 from beartype.typing import List
 from enum import Enum
+from abc import abstractmethod
 from .symmetry import Symmetry
 
 
@@ -30,6 +31,11 @@ class AbstractBond:
     dim: int
     bond_type: BondType = field(default=BondType.NONE)
 
+    @property
+    @abstractmethod
+    def nsym(self) -> int:
+        raise NotImplementedError("not implement for abstract type trait.")
+
 
 @dataclass
 class Bond(AbstractBond):
@@ -37,6 +43,15 @@ class Bond(AbstractBond):
     def __post_init__(self):
         if self.dim < 0:
             raise ValueError(f"dim should be non-negative. got {self.dim}")
+
+    def __str__(self):
+        out = f"Dim = {self.dim} |\n"
+        out += f"{self.bond_type} :\n"
+        return out
+
+    @property
+    def nsym(self) -> int:
+        return 0
 
 
 @dataclass(init=False)
@@ -51,6 +66,10 @@ class SymBond(AbstractBond):
         default_factory=lambda: np.ndarray(shape=(0, 0), dtype=np.int64)
     )
     _syms: List[Symmetry] = field(default_factory=list)
+
+    @property
+    def nsym(self) -> int:
+        return len(self._syms)
 
     def _check_qnums(self) -> None:
         for i, s in enumerate(self._syms):
@@ -83,3 +102,16 @@ class SymBond(AbstractBond):
 
         # checking qnums are consistent!
         self._check_qnums()
+
+    def __str__(self):
+
+        out = f"Dim = {self.dim} |\n"
+        out += f"{self.bond_type} :\n"
+
+        for n in range(self.nsym):
+            out += f" {str(self._syms[n])}:: "
+            for idim in range(len(self._qnums)):
+                out += " %+d" % (self._qnums[idim, n])
+            out += "\n         "
+
+        return out
