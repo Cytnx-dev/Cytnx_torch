@@ -8,11 +8,6 @@ from abc import abstractmethod
 class Symmetry:
     label: str = field(default="")
 
-
-# trait
-@dataclass(frozen=True)
-class AbelianSym(Symmetry):
-
     @abstractmethod
     def combine_rule(self, A: int, B: int) -> int:
         raise NotImplementedError("not implement for abstract type trait.")
@@ -24,6 +19,12 @@ class AbelianSym(Symmetry):
     def combine_qnums(self, qnums_a: List[int], qnums_b: List[int]) -> List[int]:
         mesh_b, mesh_a = np.meshgrid(qnums_b, qnums_a)
         return self.combine_rule(mesh_a.flatten(), mesh_b.flatten())
+
+
+# trait
+@dataclass(frozen=True)
+class AbelianSym(Symmetry):
+    pass
 
 
 @dataclass(frozen=True)
