@@ -1,5 +1,8 @@
 from dataclasses import dataclass, field
 from beartype.typing import List
+from abc import abstractmethod
+import torch
+
 from .bond import AbstractBond, SymBond, Bond
 
 
@@ -10,24 +13,52 @@ class AbstractUniTensor:
     bonds: List[AbstractBond]
     backend_args: dict = field(default_factory=dict)
 
+    @property
+    def rank(self) -> int:
+        return len(self.labels)
+
+    @property
+    def shape(self) -> List[int]:
+        return [b.dim for b in self.bonds]
+
+    @property
+    @abstractmethod
+    def is_sym(self) -> bool:
+        raise NotImplementedError("not implement for abstract type trait.")
+
 
 @dataclass
 class RegularUniTensor(AbstractUniTensor):
 
+    data: torch.Tensor = field(default=torch.Tensor([]))
+
     def __post_init__(self):
         # check here, and also initialize torch tensor
+
+        self.data = torch.zeros(size=[b.dim for b in self.bonds], **self.backend_args)
+
         pass
+
+    @property
+    def is_sym(self) -> bool:
+        return False
 
 
 @dataclass
 class BlockUniTensor(AbstractUniTensor):
 
+    blocks: List[torch.Tensor] = field(default_factory=list)
+
     def __post_init__(self):
         # check here, and also initialize torch tensor
         pass
 
+    @property
+    def is_sym(self) -> bool:
+        return True
 
-# driver:
+
+# User API:
 class UniTensor:
 
     def __new__(cls, labels: List[str], bonds: List[AbstractBond], **backend_args):

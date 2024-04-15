@@ -1,6 +1,7 @@
 from cytnx_torch.bond import Qs, Bond, SymBond, BondType
 from cytnx_torch.symmetry import U1, Zn
 from cytnx_torch.unitensor import UniTensor, RegularUniTensor, BlockUniTensor
+import torch
 
 
 def test_reg():
@@ -12,6 +13,9 @@ def test_reg():
 
     assert isinstance(ut, RegularUniTensor)
     assert ut.backend_args["dtype"] is float
+    assert ut.data.dtype is torch.float64
+    assert ut.data.shape[0] == 10
+    assert ut.data.shape[1] == 20
 
 
 def test_sym():
