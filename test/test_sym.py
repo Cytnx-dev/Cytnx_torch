@@ -26,3 +26,13 @@ def test_Zn():
     assert s1.check_qnums(q2)
 
     assert np.all(s1.combine_qnums(q1, q2) == [2, 0, 0, 1, 1, 2])
+
+
+def test_hash():
+
+    s1 = Zn(label="x", n=3)
+    s2 = Zn(label="x", n=3)
+    s3 = Zn(label="y", n=3)
+
+    assert s1 == s2
+    assert s1 != s3
