@@ -53,3 +53,14 @@ def test_permute():
     ut_new = ut.permute("c", "a", "b", by_label=True)
 
     assert np.all(ut_new.labels == ["c", "a", "b"])
+
+
+def test_init():
+
+    body = torch.zeros(size=[2, 5, 3, 4])
+
+    ut = UniTensor.from_torch(tensor=body, labels=["a", "b", "c", "d"])
+
+    assert isinstance(ut, RegularUniTensor)
+    assert isinstance(ut.data, torch.Tensor)
+    assert ut.data is body

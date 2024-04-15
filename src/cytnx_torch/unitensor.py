@@ -41,12 +41,14 @@ class AbstractUniTensor:
 @dataclass
 class RegularUniTensor(AbstractUniTensor):
 
-    data: torch.Tensor = field(default=torch.Tensor([]))
+    data: torch.Tensor = field(default=None)
 
     def __post_init__(self):
         # check here, and also initialize torch tensor
-
-        self.data = torch.zeros(size=[b.dim for b in self.bonds], **self.backend_args)
+        if self.data is None:
+            self.data = torch.zeros(
+                size=[b.dim for b in self.bonds], **self.backend_args
+            )
 
         pass
 
@@ -97,6 +99,7 @@ class BlockUniTensor(AbstractUniTensor):
 
 
 # User API:
+@dataclass(init=False)
 class UniTensor:
 
     def __new__(cls, labels: List[str], bonds: List[AbstractBond], **backend_args):
@@ -119,3 +122,20 @@ class UniTensor:
             raise ValueError(
                 "unsupported bond type or mixing Bond and SymBond when declaring UniTensor."
             )
+
+    @classmethod
+    def from_torch(
+        cls, tensor: torch.Tensor, labels: List[str] = None
+    ) -> RegularUniTensor:
+
+        if labels is None:
+            labels = [f"b{i}" for i in tensor.shape]
+
+        if len(labels) != tensor.dim():
+            raise ValueError(
+                f"number of labels should be equal to number of dimensions. got {len(labels)} and {tensor.dim()}"
+            )
+
+        return RegularUniTensor(
+            labels=labels, bonds=[Bond(dim=x) for x in tensor.shape], data=tensor
+        )
