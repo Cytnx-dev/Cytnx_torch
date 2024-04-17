@@ -49,6 +49,19 @@ class AbstractUniTensor:
     def contiguous(self) -> "AbstractUniTensor":
         raise NotImplementedError("not implement for abstract type trait.")
 
+    @property
+    @abstractmethod
+    def requires_grad(self) -> bool:
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    @abstractmethod
+    def requires_grad_(self, requires_grad: bool = True) -> "AbstractUniTensor":
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    @abstractmethod
+    def grad(self) -> "AbstractUniTensor":
+        raise NotImplementedError("not implement for abstract type trait.")
+
     def _relabel(self, old_labels: List[str], new_labels: List[str]) -> None:
 
         if len(old_labels) != len(new_labels):
@@ -176,6 +189,23 @@ class RegularUniTensor(AbstractUniTensor):
     def contiguous(self) -> "RegularUniTensor":
         return RegularUniTensor(**self._get_generic_meta(), data=self.data.contiguous())
 
+    @property
+    def requires_grad(self) -> bool:
+        return self.data.requires_grad
+
+    def requires_grad_(self, requires_grad: bool = True) -> "RegularUniTensor":
+        self.data.requires_grad_(requires_grad)
+        return self
+
+    @abstractmethod
+    def grad(self) -> "RegularUniTensor":
+        grad_data = self.data.grad
+
+        if grad_data is None:
+            grad_data = torch.Tensor(size=self.shape)
+
+        return RegularUniTensor(**self._get_generic_meta(), data=grad_data)
+
     def permute(self, *args, by_label: bool = True) -> "RegularUniTensor":
 
         if by_label:
@@ -271,6 +301,30 @@ class BlockUniTensor(AbstractUniTensor):
             **self._get_generic_meta(),
             blocks=[blk.contiguous() for blk in self.blocks],
         )
+
+    @property
+    def requires_grad(self) -> bool:
+        return np.all([x.requires_grad for x in self.blocks])
+
+    def requires_grad_(self, requires_grad: bool = True) -> "BlockUniTensor":
+
+        for blk in self.blocks:
+            blk.requires_grad_(requires_grad)
+
+        return self
+
+    @abstractmethod
+    def grad(self) -> "BlockUniTensor":
+        new_blocks = []
+        for blk in self.blocks:
+            grad_data = blk.grad
+
+            if grad_data is None:
+                grad_data = torch.Tensor(size=self.shape)
+
+            new_blocks.append(grad_data)
+
+        return BlockUniTensor(**self._get_generic_meta(), blocks=new_blocks)
 
     def permute(self, *args, by_label: bool = True) -> "BlockUniTensor":
 
