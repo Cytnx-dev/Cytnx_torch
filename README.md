@@ -32,4 +32,4 @@ We use these two tools to manage the repo:
 
 
 # developer:
-Kai-Hsin Wu, Ph.D. (kaihsinwu@gmail.com)
+* Kai-Hsin Wu, Ph.D. (kaihsinwu@gmail.com)
