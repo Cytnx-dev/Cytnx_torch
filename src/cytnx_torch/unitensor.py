@@ -5,7 +5,7 @@ from abc import abstractmethod
 import numpy as np
 import torch
 
-from .bond import AbstractBond, SymBond, Bond
+from .bond import AbstractBond, SymBond, Bond, BondType
 
 
 # traits
@@ -15,6 +15,7 @@ class AbstractUniTensor:
     bonds: List[AbstractBond]
     backend_args: dict = field(default_factory=dict)
     name: str = field(default="")
+    rowrank: int = field(default=0)
 
     def _get_permuted_meta(self, *args) -> Tuple[List[str], List[AbstractBond]]:
         args = list(args)
@@ -28,6 +29,7 @@ class AbstractUniTensor:
             "bonds": self.bonds,
             "backend_args": self.backend_args,
             "name": self.name,
+            "rowrank": self.rowrank,
         }
 
     @property
@@ -85,6 +87,23 @@ class AbstractUniTensor:
     def dtype(self) -> torch.dtype:
         raise NotImplementedError("not implement for abstract type trait.")
 
+    @abstractmethod
+    def _repr_body_diagram(self) -> str:
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    def print_diagram(self, is_bond_info=False) -> None:
+        print("-----------------------")
+        print(f"tensor Name : {self.name}")
+        print(f"tensor Rank : {self.rank}")
+        print(f"has_symmetry: {self.is_sym}")
+
+        body_str = self._repr_body_diagram()
+        print(body_str)
+
+        if is_bond_info:
+            for i in range(len(self.bonds)):
+                print(f"lbl:{self.labels[i]} {str(self.bonds[i])}")
+
 
 @dataclass
 class RegularUniTensor(AbstractUniTensor):
@@ -99,6 +118,43 @@ class RegularUniTensor(AbstractUniTensor):
             )
 
         pass
+
+    def _repr_body_diagram(self) -> str:
+        Nin = self.rowrank
+        Nout = self.rank - self.rowrank
+        if Nin > Nout:
+            vl = Nin
+        else:
+            vl = Nout
+
+        out = "            -------------      " + "\n"
+        for i in range(vl):
+            if i == 0:
+                out += "           /             \     " + "\n"
+            else:
+                out += "           |             |     " + "\n"
+
+            if i < Nin:
+                bks = BondType.get_symbol(self.bonds[i].bond_type, left_side=True)
+                ls = "%3s %s__" % (self.labels[i], bks)
+                llbl = "%-3d" % self.bonds[i].dim
+            else:
+                ls = "        "
+                llbl = "   "
+            if i < Nout:
+                bks = BondType.get_symbol(
+                    self.bonds[Nin + i].bond_type, left_side=False
+                )
+                r = "__%s %-3s" % (bks, self.labels[Nin + i])
+                rlbl = "%3d" % self.bonds[Nin + i].dim
+            else:
+                r = "        "
+                rlbl = "   "
+            out += "   %s| %s     %s |%s" % (ls, llbl, rlbl, r) + "\n"
+
+        out += "           \             /     " + "\n"
+        out += "            -------------      " + "\n"
+        return out
 
     @property
     def is_sym(self) -> bool:
@@ -152,6 +208,39 @@ class BlockUniTensor(AbstractUniTensor):
     def __post_init__(self):
         # check here, and also initialize torch tensor
         pass
+
+    def _repr_body_diagram(self) -> str:
+        Nin = self.rowrank
+        Nout = self.rank - self.rowrank
+        if Nin > Nout:
+            vl = Nin
+        else:
+            vl = Nout
+
+        out = "      |in>               <out| " + "\n"
+        out += "           ---------------      " + "\n"
+        for i in range(vl):
+            out += "           |             |     " + "\n"
+            if i < Nin:
+                bks = BondType.get_symbol(self.bonds[i].bond_type, left_side=True)
+                ls = "%3s %s__" % (self.labels[i], bks)
+                llbl = "%-3d" % self.bonds[i].dim
+            else:
+                ls = "        "
+                llbl = "   "
+            if i < Nout:
+                bks = BondType.get_symbol(
+                    self.bonds[Nin + i].bond_type, left_side=False
+                )
+                r = "__%s %-3s" % (bks, self.labels[Nin + i])
+                rlbl = "%3d" % self.bonds[Nin + i].dim
+            else:
+                r = "        "
+                rlbl = "   "
+            out += "   %s| %s     %s |%s" % (ls, llbl, rlbl, r) + "\n"
+        out += "           |             |     " + "\n"
+        out += "           ---------------     " + "\n"
+        return out
 
     @property
     def is_sym(self) -> bool:

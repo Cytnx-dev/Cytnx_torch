@@ -21,6 +21,8 @@ def test_sym_ut():
 
     assert isinstance(ut, BlockUniTensor)
     assert ut.backend_args["dtype"] is float
+    for b in ut.bonds:
+        assert not b.bond_type == BondType.NONE
 
 
 def test_relabel_blk():

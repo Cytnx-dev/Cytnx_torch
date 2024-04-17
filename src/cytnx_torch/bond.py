@@ -11,6 +11,31 @@ class BondType(Enum):
     OUT = 1
     NONE = 0
 
+    @staticmethod
+    def get_symbol(bond_type: "BondType", left_side: bool) -> str:
+        if left_side:
+            match bond_type:
+                case BondType.IN:
+                    bks = "> "
+                case BondType.OUT:
+                    bks = "<*"
+                case BondType.NONE:
+                    bks = "__"
+                case _:
+                    raise ValueError("invalid bond type")
+        else:
+            print("right", bond_type)
+            match bond_type:
+                case BondType.IN:
+                    bks = "<*"
+                case BondType.OUT:
+                    bks = " >"
+                case BondType.NONE:
+                    bks = "__"
+                case _:
+                    raise ValueError("invalid bond type")
+        return bks
+
 
 @dataclass
 class Qs:
@@ -81,7 +106,7 @@ class SymBond(AbstractBond):
         if bond_type == BondType.NONE:
             raise ValueError("SymBond should have bond_type != NONE.")
 
-        self._bond_type = bond_type
+        self.bond_type = bond_type
 
         nqnum = np.unique([x.num_qnums() for x in qnums]).flatten()
         if len(nqnum) != 1:
