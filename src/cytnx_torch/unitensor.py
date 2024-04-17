@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from beartype.typing import List, Tuple, Dict
+from beartype.typing import List, Tuple, Dict, Optional
 from typing import Any
 from abc import abstractmethod
 import numpy as np
@@ -69,6 +69,22 @@ class AbstractUniTensor:
     ) -> "AbstractUniTensor":
         raise NotImplementedError("not implement for abstract type trait.")
 
+    @abstractmethod
+    def to(
+        self, device: torch.device = None, dtype: Optional[torch.dtype] = None
+    ) -> "AbstractUniTensor":
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    @property
+    @abstractmethod
+    def device(self) -> torch.device:
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    @property
+    @abstractmethod
+    def dtype(self) -> torch.dtype:
+        raise NotImplementedError("not implement for abstract type trait.")
+
 
 @dataclass
 class RegularUniTensor(AbstractUniTensor):
@@ -112,6 +128,21 @@ class RegularUniTensor(AbstractUniTensor):
         new_ut._relabel(old_labels, new_labels)
         return new_ut
 
+    def to(
+        self, device: torch.device = None, dtype: Optional[torch.dtype] = None
+    ) -> "AbstractUniTensor":
+        return RegularUniTensor(
+            **self._get_generic_meta(), data=self.data.to(device=device, dtype=dtype)
+        )
+
+    @property
+    def device(self) -> torch.device:
+        return self.data.device
+
+    @property
+    def dtype(self) -> torch.dtype:
+        return self.data.dtype
+
 
 @dataclass
 class BlockUniTensor(AbstractUniTensor):
@@ -148,6 +179,28 @@ class BlockUniTensor(AbstractUniTensor):
 
         new_ut._relabel(old_labels, new_labels)
         return new_ut
+
+    def to(
+        self, device: torch.device = None, dtype: Optional[torch.dtype] = None
+    ) -> "AbstractUniTensor":
+        return BlockUniTensor(
+            **self._get_generic_meta(),
+            blocks=[x.to(device=device, dtype=dtype) for x in self.blocks],
+        )
+
+    @property
+    def device(self) -> torch.device:
+        if len(self.blocks) == 0:
+            return torch.device("cpu")
+        else:
+            return self.blocks[0].device
+
+    @property
+    def dtype(self) -> torch.dtype:
+        if len(self.blocks) == 0:
+            return torch.get_default_dtype()
+        else:
+            return self.blocks[0].data.dtype
 
 
 # User API:
