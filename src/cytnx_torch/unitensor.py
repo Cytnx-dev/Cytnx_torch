@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from beartype.typing import List, Tuple
+from beartype.typing import List, Tuple, Dict
+from typing import Any
 from abc import abstractmethod
 import numpy as np
 import torch
@@ -13,12 +14,21 @@ class AbstractUniTensor:
     labels: List[str]
     bonds: List[AbstractBond]
     backend_args: dict = field(default_factory=dict)
+    name: str = field(default="")
 
-    def _permute_meta(self, *args) -> Tuple[List[str], List[AbstractBond]]:
+    def _get_permuted_meta(self, *args) -> Tuple[List[str], List[AbstractBond]]:
         args = list(args)
         new_labels = np.array(self.labels)[args]
         new_bonds = np.array(self.bonds)[args]
         return new_labels, new_bonds
+
+    def _get_generic_meta(self) -> Dict[str, Any]:
+        return {
+            "labels": self.labels,
+            "bonds": self.bonds,
+            "backend_args": self.backend_args,
+            "name": self.name,
+        }
 
     @property
     def rank(self) -> int:
@@ -28,6 +38,22 @@ class AbstractUniTensor:
     def shape(self) -> List[int]:
         return [b.dim for b in self.bonds]
 
+    def _relabel(self, old_labels: List[str], new_labels: List[str]) -> None:
+
+        if len(old_labels) != len(new_labels):
+            raise ValueError(
+                f"old_labels: len={len(old_labels)} and new_labels: len={len(new_labels)} should have the same length."
+            )
+
+        out_labels = list(self.labels)
+        idx = [self.labels.index(lbl) for lbl in old_labels]
+        print(idx)
+
+        for i, lbl in zip(idx, new_labels):
+            out_labels[i] = lbl
+
+        self.labels = out_labels
+
     @property
     @abstractmethod
     def is_sym(self) -> bool:
@@ -35,6 +61,12 @@ class AbstractUniTensor:
 
     @abstractmethod
     def permute(self, *args, by_label: bool = True) -> "AbstractUniTensor":
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    @abstractmethod
+    def relabel(
+        self, old_labels: List[str], new_labels: List[str]
+    ) -> "AbstractUniTensor":
         raise NotImplementedError("not implement for abstract type trait.")
 
 
@@ -61,13 +93,24 @@ class RegularUniTensor(AbstractUniTensor):
         if by_label:
             args = [self.labels.index(lbl) for lbl in args]
 
-        new_labels, new_bonds = self._permute_meta(*args)
+        new_labels, new_bonds = self._get_permuted_meta(*args)
         return RegularUniTensor(
             labels=new_labels,
             bonds=new_bonds,
             backend_args=self.backend_args,
             data=self.data.permute(*args),
         )
+
+    def relabel(
+        self, old_labels: List[str], new_labels: List[str]
+    ) -> "RegularUniTensor":
+
+        new_ut = RegularUniTensor(
+            **self._get_generic_meta(), data=self.data  # no clone
+        )
+
+        new_ut._relabel(old_labels, new_labels)
+        return new_ut
 
 
 @dataclass
@@ -88,7 +131,7 @@ class BlockUniTensor(AbstractUniTensor):
         if by_label:
             args = [self.labels.index(lbl) for lbl in args]
 
-        new_labels, new_bonds = self._permute_meta(*args)
+        new_labels, new_bonds = self._get_permuted_meta(*args)
         new_blocks = [x.permute(*args) for x in self.blocks]
         return BlockUniTensor(
             labels=new_labels,
@@ -96,6 +139,15 @@ class BlockUniTensor(AbstractUniTensor):
             backend_args=self.backend_args,
             blocks=new_blocks,
         )
+
+    def relabel(self, old_labels: List[str], new_labels: List[str]) -> "BlockUniTensor":
+
+        new_ut = BlockUniTensor(
+            **self._get_generic_meta(), blocks=self.blocks  # no clone
+        )
+
+        new_ut._relabel(old_labels, new_labels)
+        return new_ut
 
 
 # User API:
