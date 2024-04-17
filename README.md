@@ -1,5 +1,8 @@
 # cytnx-torch
 
+This is the enhanced version of previous project [Tor10](https://github.com/kaihsin/Tor10)
+
+
 # To develope:
 
 [Setting up dev tools]
@@ -26,3 +29,7 @@ We use these two tools to manage the repo:
     ```
     $rye run pytest
     ```
+
+
+# developer:
+Kai-Hsin Wu, Ph.D. (kaihsinwu@gmail.com)
