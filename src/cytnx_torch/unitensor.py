@@ -62,6 +62,10 @@ class AbstractUniTensor:
     def grad(self) -> "AbstractUniTensor":
         raise NotImplementedError("not implement for abstract type trait.")
 
+    @abstractmethod
+    def backward(self) -> None:
+        raise NotImplementedError("not implement for abstract type trait.")
+
     def _relabel(self, old_labels: List[str], new_labels: List[str]) -> None:
 
         if len(old_labels) != len(new_labels):
@@ -197,7 +201,6 @@ class RegularUniTensor(AbstractUniTensor):
         self.data.requires_grad_(requires_grad)
         return self
 
-    @abstractmethod
     def grad(self) -> "RegularUniTensor":
         grad_data = self.data.grad
 
@@ -205,6 +208,9 @@ class RegularUniTensor(AbstractUniTensor):
             grad_data = torch.Tensor(size=self.shape)
 
         return RegularUniTensor(**self._get_generic_meta(), data=grad_data)
+
+    def backward(self) -> None:
+        self.data.backward()
 
     def permute(self, *args, by_label: bool = True) -> "RegularUniTensor":
 
@@ -313,7 +319,6 @@ class BlockUniTensor(AbstractUniTensor):
 
         return self
 
-    @abstractmethod
     def grad(self) -> "BlockUniTensor":
         new_blocks = []
         for blk in self.blocks:
@@ -325,6 +330,10 @@ class BlockUniTensor(AbstractUniTensor):
             new_blocks.append(grad_data)
 
         return BlockUniTensor(**self._get_generic_meta(), blocks=new_blocks)
+
+    def backward(self) -> None:
+        for blk in self.blocks:
+            blk.backward()
 
     def permute(self, *args, by_label: bool = True) -> "BlockUniTensor":
 
