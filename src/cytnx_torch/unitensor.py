@@ -37,8 +37,17 @@ class AbstractUniTensor:
         return len(self.labels)
 
     @property
-    def shape(self) -> List[int]:
-        return [b.dim for b in self.bonds]
+    def shape(self) -> Tuple[int]:
+        return tuple([b.dim for b in self.bonds])
+
+    @property
+    @abstractmethod
+    def is_contiguous(self) -> bool:
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    @abstractmethod
+    def contiguous(self) -> "AbstractUniTensor":
+        raise NotImplementedError("not implement for abstract type trait.")
 
     def _relabel(self, old_labels: List[str], new_labels: List[str]) -> None:
 
@@ -160,6 +169,13 @@ class RegularUniTensor(AbstractUniTensor):
     def is_sym(self) -> bool:
         return False
 
+    @property
+    def is_contiguous(self) -> bool:
+        return self.data.is_contiguous()
+
+    def contiguous(self) -> "RegularUniTensor":
+        return RegularUniTensor(**self._get_generic_meta(), data=self.data.contiguous())
+
     def permute(self, *args, by_label: bool = True) -> "RegularUniTensor":
 
         if by_label:
@@ -245,6 +261,16 @@ class BlockUniTensor(AbstractUniTensor):
     @property
     def is_sym(self) -> bool:
         return True
+
+    @property
+    def is_contiguous(self) -> bool:
+        return np.all([blk.is_contiguous() for blk in self.blocks])
+
+    def contiguous(self) -> "BlockUniTensor":
+        return BlockUniTensor(
+            **self._get_generic_meta(),
+            blocks=[blk.contiguous() for blk in self.blocks],
+        )
 
     def permute(self, *args, by_label: bool = True) -> "BlockUniTensor":
 
