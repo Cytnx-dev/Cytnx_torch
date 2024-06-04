@@ -21,9 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up rye
-        uses: atu4403/setup-rye-multiOS@v1
+        uses: eifinger/setup-rye@v3
       - name: Sync dependencies using rye
         run: |
+          rye config --set-bool behavior.use-uv=false
           rye pin ${{ matrix.python-version }}
           rye sync
       - name: Run tests with pytest
