@@ -66,6 +66,10 @@ class AbstractUniTensor:
     def backward(self) -> None:
         raise NotImplementedError("not implement for abstract type trait.")
 
+    @abstractmethod
+    def contract(self, rhs: "AbstractUniTensor") -> "AbstractUniTensor":
+        raise NotImplementedError("not implement for abstract type trait.")
+
     def _relabel(self, old_labels: List[str], new_labels: List[str]) -> None:
 
         if len(old_labels) != len(new_labels):
@@ -88,7 +92,9 @@ class AbstractUniTensor:
         raise NotImplementedError("not implement for abstract type trait.")
 
     @abstractmethod
-    def permute(self, *args: Union[str,int], by_label: bool = True) -> "AbstractUniTensor":
+    def permute(
+        self, *args: Union[str, int], by_label: bool = True
+    ) -> "AbstractUniTensor":
         raise NotImplementedError("not implement for abstract type trait.")
 
     @abstractmethod
@@ -212,7 +218,9 @@ class RegularUniTensor(AbstractUniTensor):
     def backward(self) -> None:
         self.data.backward()
 
-    def permute(self, *args : Union[str,int], by_label: bool = True) -> "RegularUniTensor":
+    def permute(
+        self, *args: Union[str, int], by_label: bool = True
+    ) -> "RegularUniTensor":
 
         if by_label:
             args = [self.labels.index(lbl) for lbl in args]
@@ -335,7 +343,9 @@ class BlockUniTensor(AbstractUniTensor):
         for blk in self.blocks:
             blk.backward()
 
-    def permute(self, *args: Union[str,int], by_label: bool = True) -> "BlockUniTensor":
+    def permute(
+        self, *args: Union[str, int], by_label: bool = True
+    ) -> "BlockUniTensor":
 
         if by_label:
             args = [self.labels.index(lbl) for lbl in args]
