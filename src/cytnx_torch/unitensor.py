@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from beartype.typing import List, Tuple, Dict, Optional
+from beartype.typing import List, Tuple, Dict, Optional, Union
 from typing import Any
 from abc import abstractmethod
 import numpy as np
@@ -88,7 +88,7 @@ class AbstractUniTensor:
         raise NotImplementedError("not implement for abstract type trait.")
 
     @abstractmethod
-    def permute(self, *args, by_label: bool = True) -> "AbstractUniTensor":
+    def permute(self, *args: Union[str,int], by_label: bool = True) -> "AbstractUniTensor":
         raise NotImplementedError("not implement for abstract type trait.")
 
     @abstractmethod
@@ -212,7 +212,7 @@ class RegularUniTensor(AbstractUniTensor):
     def backward(self) -> None:
         self.data.backward()
 
-    def permute(self, *args, by_label: bool = True) -> "RegularUniTensor":
+    def permute(self, *args : Union[str,int], by_label: bool = True) -> "RegularUniTensor":
 
         if by_label:
             args = [self.labels.index(lbl) for lbl in args]
@@ -335,7 +335,7 @@ class BlockUniTensor(AbstractUniTensor):
         for blk in self.blocks:
             blk.backward()
 
-    def permute(self, *args, by_label: bool = True) -> "BlockUniTensor":
+    def permute(self, *args: Union[str,int], by_label: bool = True) -> "BlockUniTensor":
 
         if by_label:
             args = [self.labels.index(lbl) for lbl in args]
