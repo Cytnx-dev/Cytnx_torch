@@ -162,7 +162,7 @@ class RegularUniTensor(AbstractUniTensor):
         out = "            -------------      " + "\n"
         for i in range(vl):
             if i == 0:
-                out += "           /             \     " + "\n"
+                out += "           /             \\     " + "\n"
             else:
                 out += "           |             |     " + "\n"
 
@@ -184,7 +184,7 @@ class RegularUniTensor(AbstractUniTensor):
                 rlbl = "   "
             out += "   %s| %s     %s |%s" % (ls, llbl, rlbl, r) + "\n"
 
-        out += "           \             /     " + "\n"
+        out += "           \\             /     " + "\n"
         out += "            -------------      " + "\n"
         return out
 
