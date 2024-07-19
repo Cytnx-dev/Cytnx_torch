@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from beartype.typing import List
 from enum import Enum
 from abc import abstractmethod
+from copy import deepcopy
 from .symmetry import Symmetry
 
 
@@ -61,6 +62,18 @@ class AbstractBond:
     def nsym(self) -> int:
         raise NotImplementedError("not implement for abstract type trait.")
 
+    @abstractmethod
+    def contractable_with(self, other: "AbstractBond") -> bool:
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    def redirect(self) -> "AbstractBond":
+        if self.bond_type == BondType.NONE:
+            return self
+        else:
+            out = deepcopy(self)
+            out.bond_type = BondType(-self.bond_type.value)
+            return out
+
 
 @dataclass
 class Bond(AbstractBond):
@@ -78,6 +91,14 @@ class Bond(AbstractBond):
     def nsym(self) -> int:
         return 0
 
+    def contractable_with(self, other: "AbstractBond") -> bool:
+        if not isinstance(other, Bond):
+            return False
+
+        return (
+            self.bond_type.value + other.bond_type.value == 0 and self.dim == other.dim
+        )
+
 
 @dataclass(init=False)
 class SymBond(AbstractBond):
@@ -91,6 +112,48 @@ class SymBond(AbstractBond):
         default_factory=lambda: np.ndarray(shape=(0, 0), dtype=np.int64)
     )
     _syms: List[Symmetry] = field(default_factory=list)
+
+    def _check_meta_eq(self, other: AbstractBond) -> bool:
+        if not isinstance(other, SymBond):
+            return False
+
+        # check length first:
+        if len(self._syms) != len(other._syms):
+            return False
+        if len(self._qnums) != len(other._qnums):
+            return False
+        if len(self._degs) != len(other._degs):
+            return False
+
+        # check each element:
+        if not np.allclose(self._degs, other._degs):
+            return False
+
+        if not np.allclose(self._qnums, other._qnums):
+            return False
+
+        for i in range(len(self._syms)):
+            if not self._syms[i] == other._syms[i]:
+                return False
+
+        return True
+
+    def __eq__(self, other: AbstractBond) -> bool:
+        if not super().__eq__(other):
+            return False
+
+        return self._check_meta_eq(other)
+
+    def contractable_with(self, other: "AbstractBond") -> bool:
+        if not isinstance(other, SymBond):
+            return False
+
+        if (self.bond_type.value + other.bond_type.value == 0) and self._check_meta_eq(
+            other
+        ):
+            return True
+        else:
+            return False
 
     @property
     def nsym(self) -> int:

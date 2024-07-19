@@ -30,3 +30,17 @@ def test_init():
     assert isinstance(ut, RegularUniTensor)
     assert isinstance(ut.data, torch.Tensor)
     assert ut.data is body
+
+
+def test_get_bond():
+
+    b1 = Bond(dim=10, bond_type=BondType.IN)
+    b2 = Bond(dim=10, bond_type=BondType.OUT)
+    b3 = Bond(dim=20, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b", "c"], bonds=[b1, b2, b3], dtype=float)
+
+    assert ut.get_bond("a") == b1
+    assert ut.get_bond("b") == b2
+    assert ut.get_bond("c") == b3
+    assert ut.get_bond(2) == b3
