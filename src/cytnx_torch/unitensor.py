@@ -6,6 +6,7 @@ import numpy as np
 import torch
 
 from .bond import AbstractBond, SymBond, Bond, BondType
+from .converter import AbstractConverter, RegularUniTensorConverter
 
 
 # traits
@@ -19,8 +20,8 @@ class AbstractUniTensor:
 
     def _get_permuted_meta(self, *args) -> Tuple[List[str], List[AbstractBond]]:
         args = list(args)
-        new_labels = np.array(self.labels)[args]
-        new_bonds = np.array(self.bonds)[args]
+        new_labels = list(np.array(self.labels)[args])
+        new_bonds = list(np.array(self.bonds)[args])
         return new_labels, new_bonds
 
     def _get_generic_meta(self) -> Dict[str, Any]:
@@ -67,7 +68,9 @@ class AbstractUniTensor:
         raise NotImplementedError("not implement for abstract type trait.")
 
     @abstractmethod
-    def contract(self, rhs: "AbstractUniTensor") -> "AbstractUniTensor":
+    def contract(
+        self, rhs: Union["AbstractUniTensor", "AbstractConverter"]
+    ) -> "AbstractUniTensor":
         raise NotImplementedError("not implement for abstract type trait.")
 
     def _relabel(self, old_labels: List[str], new_labels: List[str]) -> None:
@@ -122,6 +125,25 @@ class AbstractUniTensor:
     @abstractmethod
     def _repr_body_diagram(self) -> str:
         raise NotImplementedError("not implement for abstract type trait.")
+
+    def get_label_index(self, label: str) -> int:
+        return self.labels.index(label)
+
+    def get_bond(self, id: Union[str, int]) -> AbstractBond:
+
+        idx = None
+        match id:
+            case str():
+                idx = self.labels.index(id)
+            case int():
+                idx = id
+            case _:
+                raise ValueError("id should be either str or int.")
+
+        if idx >= len(self.bonds):
+            raise ValueError(f"index {idx} is out of bound.")
+
+        return self.bonds[idx]
 
     def print_diagram(self, is_bond_info=False) -> None:
         print("-----------------------")
@@ -250,6 +272,19 @@ class RegularUniTensor(AbstractUniTensor):
         return RegularUniTensor(
             **self._get_generic_meta(), data=self.data.to(device=device, dtype=dtype)
         )
+
+    def contract(
+        self, rhs: Union["RegularUniTensor", "RegularUniTensorConverter"]
+    ) -> "RegularUniTensor":
+        match rhs:
+            case RegularUniTensor():
+                raise NotImplementedError("TODO")
+            case RegularUniTensorConverter():
+                return rhs._contract(is_lhs=False, utensor=self)
+            case _:
+                raise ValueError(
+                    "rhs should be either RegularUniTensor or RegularUniTensorConverter."
+                )
 
     @property
     def device(self) -> torch.device:
