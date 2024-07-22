@@ -30,3 +30,18 @@ def test_relabel_reg():
 
     assert np.all(ut2.labels == ["a", "c", "x"])
     assert isinstance(ut2, RegularUniTensor)
+
+
+def test_get_item():
+    b1 = Bond(dim=10, bond_type=BondType.IN)
+    b2 = Bond(dim=20, bond_type=BondType.OUT)
+    b3 = Bond(dim=30, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b", "c"], bonds=[b1, b2, b3], dtype=float)
+
+    x = ut[0, ::2]
+
+    assert x.shape == (10, 30)
+    assert x.labels == ["b", "c"]
+    assert x.bonds[0].bond_type == BondType.OUT
+    assert x.bonds[1].bond_type == BondType.OUT

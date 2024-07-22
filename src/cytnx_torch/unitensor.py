@@ -41,6 +41,14 @@ class AbstractUniTensor:
     def shape(self) -> Tuple[int]:
         return tuple([b.dim for b in self.bonds])
 
+    @abstractmethod
+    def __getitem__(self, key: Tuple) -> "AbstractUniTensor":
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    @abstractmethod
+    def __setitem__(self, key: Tuple) -> None:
+        raise NotImplementedError("not implement for abstract type trait.")
+
     @property
     @abstractmethod
     def is_contiguous(self) -> bool:
@@ -209,6 +217,41 @@ class RegularUniTensor(AbstractUniTensor):
         out += "           \\             /     " + "\n"
         out += "            -------------      " + "\n"
         return out
+
+    def __getitem__(self, key) -> "RegularUniTensor":
+
+        accessor = key
+        if not isinstance(key, tuple):
+            accessor = (key,)
+
+        if len(accessor) != self.rank:
+            accessor = [*accessor, *([None] * (self.rank - len(accessor)))]
+
+        remain_indices = []
+        for i, kitem in enumerate(accessor):
+            if kitem is None or isinstance(kitem, slice):
+                remain_indices.append(i)
+            elif isinstance(kitem, int):
+                continue
+            else:
+                raise ValueError("key should be either int or slice.")
+
+        new_data = self.data[key]
+
+        assert len(remain_indices) == len(new_data.shape), "ERR, shape mismatch."
+
+        new_bonds = [
+            Bond(dim=dim, bond_type=self.bonds[remain_indices[i]].bond_type)
+            for i, dim in enumerate(new_data.shape)
+        ]
+        new_labels = [self.labels[i] for i in remain_indices]
+
+        return RegularUniTensor(
+            labels=new_labels,
+            bonds=new_bonds,
+            backend_args=self.backend_args,
+            data=new_data,
+        )
 
     @property
     def is_sym(self) -> bool:
