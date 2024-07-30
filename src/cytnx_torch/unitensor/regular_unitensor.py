@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from beartype.typing import List, Optional, Union
 import torch
+from numbers import Number
 
 from ..bond import Bond, BondType
 from ..converter import RegularUniTensorConverter
@@ -93,6 +94,12 @@ class RegularUniTensor(AbstractUniTensor):
             data=new_data,
         )
 
+    def __setitem__(self, key, new_value: torch.Tensor) -> None:
+        if not isinstance(new_value, torch.Tensor):
+            raise ValueError("new_value should be torch.Tensor.")
+
+        self.data[key] = new_value
+
     @property
     def is_sym(self) -> bool:
         return False
@@ -176,3 +183,6 @@ class RegularUniTensor(AbstractUniTensor):
     @property
     def dtype(self) -> torch.dtype:
         return self.data.dtype
+
+    def item(self) -> Number:
+        return self.data.item()
