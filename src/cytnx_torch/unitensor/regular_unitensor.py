@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
-from beartype.typing import List, Optional, Union
+from beartype.typing import List, Optional, Union, Tuple
 import torch
 from numbers import Number
-
+import numpy as np
 from ..bond import Bond, BondType
 from ..converter import RegularUniTensorConverter
 from .base import AbstractUniTensor
@@ -59,8 +59,14 @@ class RegularUniTensor(AbstractUniTensor):
         out += "            -------------      " + "\n"
         return out
 
+    def __eq__(self, rhs: "RegularUniTensor") -> bool:
+        if not isinstance(rhs, RegularUniTensor):
+            return False
+
+        return super().__eq__(rhs) and torch.equal(self.data, rhs.data)
+
     def __getitem__(self, key) -> "RegularUniTensor":
-        print(key)
+
         accessor = key
         if not isinstance(key, tuple):
             accessor = (key,)
@@ -144,6 +150,58 @@ class RegularUniTensor(AbstractUniTensor):
             backend_args=self.backend_args,
             data=self.data.permute(*args),
         )
+
+    def as_matrix(
+        self,
+    ) -> Tuple[
+        "RegularUniTensor", RegularUniTensorConverter, RegularUniTensorConverter
+    ]:
+        if self.rowrank < 1 or self.rowrank >= self.rank:
+            raise ValueError(
+                "cannot convert to matrix. At least one bond need to be on row space and one bond need to be on col space."
+            )
+
+        # here we only check the first element!
+        is_directional_bonds = self.bonds[0].bond_type != BondType.NONE
+
+        # create converter:
+        bond_L = Bond(
+            dim=np.prod([b.dim for b in self.bonds[: self.rowrank]]),
+            bond_type=BondType.OUT if not is_directional_bonds else BondType.NONE,
+        )
+        new_label_L = "_aux_L_"
+        converter_L = RegularUniTensorConverter(
+            output_bonds=self.bonds[: self.rowrank],
+            output_labels=self.labels[: self.rowrank],
+            input_bonds=[bond_L],
+            input_labels=[new_label_L],
+        )
+
+        bond_R = Bond(
+            dim=np.prod([b.dim for b in self.bonds[self.rowrank :]]),
+            bond_type=BondType.IN if not is_directional_bonds else BondType.NONE,
+        )
+        new_label_R = "_aux_R_"
+        converter_R = RegularUniTensorConverter(
+            output_bonds=self.bonds[self.rowrank :],
+            output_labels=self.labels[self.rowrank :],
+            input_bonds=[bond_R],
+            input_labels=[new_label_R],
+        )
+
+        new_labels = [new_label_L, new_label_R]
+        new_bonds = [bond_L.redirect(), bond_R.redirect()]
+
+        new_tn = RegularUniTensor(
+            labels=new_labels,
+            bonds=new_bonds,
+            backend_args=self.backend_args,
+            name=self.name,
+            rowrank=1,
+            data=self.data.reshape(bond_L.dim, bond_R.dim),
+        )
+
+        return new_tn, converter_L, converter_R
 
     def relabel(
         self, old_labels: List[str], new_labels: List[str]
