@@ -60,7 +60,7 @@ class RegularUniTensor(AbstractUniTensor):
         return out
 
     def __getitem__(self, key) -> "RegularUniTensor":
-
+        print(key)
         accessor = key
         if not isinstance(key, tuple):
             accessor = (key,)
