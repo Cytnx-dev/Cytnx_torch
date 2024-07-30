@@ -28,6 +28,14 @@ def test_Zn():
     assert np.all(s1.combine_qnums(q1, q2) == [2, 0, 0, 1, 1, 2])
 
 
+def test_reverse():
+    s1 = Zn(label="x", n=3)
+
+    q1 = [0, 1, 2]
+
+    assert np.all(s1.reverse_qnums(q1) == [0, -1, -2])
+
+
 def test_hash():
 
     s1 = Zn(label="x", n=3)

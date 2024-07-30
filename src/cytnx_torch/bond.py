@@ -1,6 +1,6 @@
 import numpy as np
 from dataclasses import dataclass, field
-from beartype.typing import List
+from beartype.typing import List, Tuple
 from enum import Enum
 from abc import abstractmethod
 from copy import deepcopy
@@ -111,7 +111,7 @@ class SymBond(AbstractBond):
     _qnums: np.ndarray[int] = field(
         default_factory=lambda: np.ndarray(shape=(0, 0), dtype=np.int64)
     )
-    _syms: List[Symmetry] = field(default_factory=list)
+    _syms: Tuple[Symmetry] = field(default_factory=tuple)
 
     def _check_meta_eq(self, other: AbstractBond) -> bool:
         if not isinstance(other, SymBond):
@@ -132,9 +132,8 @@ class SymBond(AbstractBond):
         if not np.allclose(self._qnums, other._qnums):
             return False
 
-        for i in range(len(self._syms)):
-            if not self._syms[i] == other._syms[i]:
-                return False
+        if not self._syms == other._syms:
+            return False
 
         return True
 
@@ -154,6 +153,32 @@ class SymBond(AbstractBond):
             return True
         else:
             return False
+
+    def check_same_symmetry(self, *bonds: "SymBond") -> bool:
+        for bd in bonds:
+            if not isinstance(bd, SymBond):
+                return False
+
+            if len(self._syms) != len(bd._syms):
+                return False
+
+            if not np.all([isym == bdsym for isym, bdsym in zip(self._syms, bd._syms)]):
+                return False
+
+        return True
+
+    def get_qnum(self, qidx: int, directional: bool = True) -> np.ndarray[int]:
+
+        if directional:
+            if self.bond_type == BondType.OUT:
+                return np.array(
+                    [
+                        self._syms[i].reverse_rule(qn)
+                        for i, qn in enumerate(self._qnums[qidx])
+                    ]
+                )
+
+        return self._qnums[qidx]
 
     @property
     def nsym(self) -> int:
@@ -184,7 +209,7 @@ class SymBond(AbstractBond):
 
         self._qnums = np.vstack([x.values for x in qnums])
         self._degs = np.array([x.degs for x in qnums])
-        self._syms = list(syms)
+        self._syms = tuple(syms)
 
         self.dim = np.sum(self._degs)
 

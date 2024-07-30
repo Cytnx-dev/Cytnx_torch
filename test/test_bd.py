@@ -77,3 +77,43 @@ def test_contractible():
     )
 
     assert b1.contractable_with(b3)
+
+
+def test_same_sym():
+    b2 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+
+    b1 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+    b3 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+    assert b1.check_same_symmetry(b2, b3)
+
+
+def test_same_sym_invalid():
+    b2 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+
+    b1 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=4)],
+    )
+    b3 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+    assert not b1.check_same_symmetry(b2, b3)
