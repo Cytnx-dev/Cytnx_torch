@@ -40,13 +40,24 @@ class BlockUniTensorMeta:
                 "key should have the same length as the rank of the tensor"
             )
 
-        new_map = []
+        new_maps = []
         old_blk_id = []
         for blk_id, map in enumerate(self.qn_indices_map):
-            if all([k is None or m in k for m, k in zip(map, key)]):
-                new_map.append(map)
-                old_blk_id.append(blk_id)
-        return BlockUniTensorMeta(qn_indices_map=new_map), old_blk_id
+            # TODO optimize this
+            new_mp = []
+            for m, k in zip(map, key):
+                if k is None:
+                    new_mp.append(m)
+                else:
+                    if m in k:
+                        new_mp.append(k.index(m))
+                    else:
+                        break
+            if len(new_mp) != self.rank():
+                continue
+            new_maps.append(new_mp)
+            old_blk_id.append(blk_id)
+        return BlockUniTensorMeta(qn_indices_map=np.array(new_maps)), old_blk_id
 
 
 @dataclass

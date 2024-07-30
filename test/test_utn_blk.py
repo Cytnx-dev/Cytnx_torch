@@ -75,3 +75,6 @@ def test_getitem():
 
     assert x.shape == (3, 7, 8)
     assert x.labels == ["a", "b", "c"]
+    assert len(x.blocks) == 1
+    assert x.meta.qn_indices_map.shape == (1, 3)
+    assert np.all(x.meta.qn_indices_map[0] == [0, 1, 1])
