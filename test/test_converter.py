@@ -1,7 +1,8 @@
 import numpy as np
 from cytnx_torch.bond import Bond, BondType
 from cytnx_torch.converter import RegularUniTensorConverter
-from cytnx_torch.unitensor import UniTensor, RegularUniTensor
+from cytnx_torch.unitensor.regular_unitensor import RegularUniTensor
+from cytnx_torch.unitensor import UniTensor
 
 
 def test_revert():

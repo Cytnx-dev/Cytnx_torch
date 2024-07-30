@@ -1,5 +1,6 @@
 from cytnx_torch.bond import Bond, BondType
-from cytnx_torch.unitensor import UniTensor, RegularUniTensor
+from cytnx_torch.unitensor import UniTensor
+from cytnx_torch.unitensor.regular_unitensor import RegularUniTensor
 import numpy as np
 import torch
 

@@ -1,6 +1,7 @@
 from cytnx_torch.bond import Qs, SymBond, BondType
 from cytnx_torch.symmetry import U1, Zn
-from cytnx_torch.unitensor import UniTensor, BlockUniTensor
+from cytnx_torch.unitensor import UniTensor
+from cytnx_torch.unitensor.block_unitensor import BlockUniTensor
 import numpy as np
 
 
