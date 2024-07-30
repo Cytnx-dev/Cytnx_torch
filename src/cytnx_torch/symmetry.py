@@ -4,6 +4,11 @@ from beartype.typing import Union
 from abc import abstractmethod
 
 
+@dataclass
+class Qid:
+    value: int
+
+
 @dataclass(frozen=True)
 class Symmetry:
     label: str = field(default="")

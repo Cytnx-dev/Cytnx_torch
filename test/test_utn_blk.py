@@ -1,7 +1,7 @@
 from cytnx_torch.bond import Qs, SymBond, BondType
 from cytnx_torch.symmetry import U1, Zn
 from cytnx_torch.unitensor import UniTensor
-from cytnx_torch.unitensor.block_unitensor import BlockUniTensor
+from cytnx_torch.unitensor.block_unitensor import BlockUniTensor, Qid
 import numpy as np
 
 
@@ -50,3 +50,28 @@ def test_relabel_blk():
 
     assert np.all(ut2.labels == ["a", "c", "x"])
     assert isinstance(ut2, BlockUniTensor)
+
+
+def test_getitem():
+    b1 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+    b2 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+    b3 = SymBond(
+        bond_type=BondType.OUT,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 0]) >> 4, Qs([-1, 1]) >> 5],
+        syms=[U1(), Zn(n=2)],
+    )
+
+    ut = UniTensor(labels=["a", "b", "c"], bonds=[b1, b2, b3], dtype=float)
+
+    x = ut[Qid(0), :, [Qid(0), Qid(2)]]
+
+    assert x.shape == (3, 7, 8)
+    assert x.labels == ["a", "b", "c"]

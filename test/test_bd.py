@@ -55,6 +55,25 @@ def test_eq_sym_bond():
     assert b1 != b3
 
 
+def test_slice_by_qnid():
+    b2 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4, Qs([3, 0]) >> 4, Qs([4, 1]) >> 5],
+        syms=[U1(), Zn(n=2)],
+    )
+
+    b1 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([3, 0]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+
+    b3 = b2.slice_by_qindices([0, 2])
+
+    assert b3 == b1
+    assert b3.dim == b1.dim
+
+
 def test_contractible():
     b2 = SymBond(
         bond_type=BondType.IN,

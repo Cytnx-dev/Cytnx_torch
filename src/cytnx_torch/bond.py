@@ -1,6 +1,6 @@
 import numpy as np
 from dataclasses import dataclass, field
-from beartype.typing import List, Tuple
+from beartype.typing import List, Tuple, Optional
 from enum import Enum
 from abc import abstractmethod
 from copy import deepcopy
@@ -112,6 +112,19 @@ class SymBond(AbstractBond):
         default_factory=lambda: np.ndarray(shape=(0, 0), dtype=np.int64)
     )
     _syms: Tuple[Symmetry] = field(default_factory=tuple)
+
+    def slice_by_qindices(
+        self, qindices: Optional[np.ndarray[int]] = None
+    ) -> "SymBond":
+
+        if qindices is None:
+            return self
+        else:
+            return SymBond(
+                bond_type=self.bond_type,
+                qnums=[Qs(self._qnums[qn]) >> self._degs[qn] for qn in qindices],
+                syms=self._syms,
+            )
 
     def _check_meta_eq(self, other: AbstractBond) -> bool:
         if not isinstance(other, SymBond):
