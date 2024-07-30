@@ -152,7 +152,7 @@ class RegularUniTensor(AbstractUniTensor):
         )
 
     def as_matrix(
-        self,
+        self, left_bond_label: str = "_cb_L_", right_bond_label: str = "_cb_R_"
     ) -> Tuple[
         "RegularUniTensor", RegularUniTensorConverter, RegularUniTensorConverter
     ]:
@@ -169,7 +169,7 @@ class RegularUniTensor(AbstractUniTensor):
             dim=np.prod([b.dim for b in self.bonds[: self.rowrank]]),
             bond_type=BondType.OUT if not is_directional_bonds else BondType.NONE,
         )
-        new_label_L = "_aux_L_"
+        new_label_L = left_bond_label
         converter_L = RegularUniTensorConverter(
             output_bonds=self.bonds[: self.rowrank],
             output_labels=self.labels[: self.rowrank],
@@ -181,7 +181,7 @@ class RegularUniTensor(AbstractUniTensor):
             dim=np.prod([b.dim for b in self.bonds[self.rowrank :]]),
             bond_type=BondType.IN if not is_directional_bonds else BondType.NONE,
         )
-        new_label_R = "_aux_R_"
+        new_label_R = right_bond_label
         converter_R = RegularUniTensorConverter(
             output_bonds=self.bonds[self.rowrank :],
             output_labels=self.labels[self.rowrank :],

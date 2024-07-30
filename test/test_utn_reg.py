@@ -83,10 +83,10 @@ def test_as_matrix():
 
     ut.rowrank = 2
 
-    mat, cl, cr = ut.as_matrix()
+    mat, cl, cr = ut.as_matrix(left_bond_label="x", right_bond_label="y")
 
     assert mat.shape == (6, 20)
-    assert mat.labels == ["_aux_L_", "_aux_R_"]
+    assert mat.labels == ["x", "y"]
 
     reconstructed_ut = cl.contract(mat).contract(cr)
 
