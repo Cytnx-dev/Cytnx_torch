@@ -33,6 +33,14 @@ class AbstractUniTensor:
             "rowrank": self.rowrank,
         }
 
+    def __eq__(self, rhs: "AbstractUniTensor") -> bool:
+        return (
+            self.labels == rhs.labels
+            and self.bonds == rhs.bonds
+            and self.name == rhs.name
+            and self.rowrank == rhs.rowrank
+        )
+
     @property
     def rank(self) -> int:
         return len(self.labels)
@@ -47,6 +55,10 @@ class AbstractUniTensor:
 
     @abstractmethod
     def __setitem__(self, key: Tuple) -> None:
+        raise NotImplementedError("not implement for abstract type trait.")
+
+    @abstractmethod
+    def as_matrix(self) -> "AbstractUniTensor":
         raise NotImplementedError("not implement for abstract type trait.")
 
     @property

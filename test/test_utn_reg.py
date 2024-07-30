@@ -71,3 +71,24 @@ def test_scalar_item():
 
     assert isinstance(ut, RegularUniTensor)
     assert ut.item() == 0.0
+
+
+def test_as_matrix():
+    b1 = Bond(dim=2, bond_type=BondType.IN)
+    b2 = Bond(dim=3, bond_type=BondType.OUT)
+    b3 = Bond(dim=4, bond_type=BondType.OUT)
+    b4 = Bond(dim=5, bond_type=BondType.IN)
+
+    ut = UniTensor(labels=["a", "b", "c", "d"], bonds=[b1, b2, b3, b4], dtype=float)
+
+    ut.rowrank = 2
+
+    mat, cl, cr = ut.as_matrix()
+
+    assert mat.shape == (6, 20)
+    assert mat.labels == ["_aux_L_", "_aux_R_"]
+
+    reconstructed_ut = cl.contract(mat).contract(cr)
+
+    assert reconstructed_ut.labels == ["a", "b", "c", "d"]
+    assert reconstructed_ut == ut
