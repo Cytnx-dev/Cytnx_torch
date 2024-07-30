@@ -18,15 +18,17 @@ class UniTensor:
                 f"number of labels should be equal to number of bonds. got {len(labels)} and {len(bonds)}"
             )
 
-        if all([isinstance(b, SymBond) for b in bonds]):
-            # symmetry:
-            return BlockUniTensor(labels=labels, bonds=bonds, backend_args=backend_args)
-
-        elif all([isinstance(b, Bond) for b in bonds]):
+        # NOTE
+        # please keep the if statement order as RegularUniTensor -> BlockUniTensor -> ...
+        # (RegularUniTensor always comes first, so that when labels and bonds are empty, it correctly produce a scalar tensor)
+        if all([isinstance(b, Bond) for b in bonds]):
             # no symmetry:
             return RegularUniTensor(
                 labels=labels, bonds=bonds, backend_args=backend_args
             )
+        elif all([isinstance(b, SymBond) for b in bonds]):
+            # symmetry:
+            return BlockUniTensor(labels=labels, bonds=bonds, backend_args=backend_args)
         else:
             raise ValueError(
                 "unsupported bond type or mixing Bond and SymBond when declaring UniTensor."
