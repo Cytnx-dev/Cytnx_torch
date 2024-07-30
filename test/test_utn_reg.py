@@ -46,3 +46,21 @@ def test_get_item():
     assert x.labels == ["b", "c"]
     assert x.bonds[0].bond_type == BondType.OUT
     assert x.bonds[1].bond_type == BondType.OUT
+
+
+def test_set_item():
+    b1 = Bond(dim=10, bond_type=BondType.IN)
+    b2 = Bond(dim=20, bond_type=BondType.OUT)
+    b3 = Bond(dim=30, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b", "c"], bonds=[b1, b2, b3], dtype=float)
+
+    ut[0, ::2] = torch.arange(300).reshape(10, 30).to(float)
+
+    x = ut[0, ::2]
+
+    assert x.shape == (10, 30)
+    assert x.labels == ["b", "c"]
+    assert x.bonds[0].bond_type == BondType.OUT
+    assert x.bonds[1].bond_type == BondType.OUT
+    assert torch.allclose(x.data, torch.arange(300).reshape(10, 30).to(float))
