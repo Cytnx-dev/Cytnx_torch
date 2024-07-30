@@ -193,12 +193,10 @@ class BlockUniTensor(AbstractUniTensor):
             len(qid_accessor) == self.rank
         ), "key should have the same length as the rank of the tensor"
 
-        # TODO create new metas:
         new_labels = self.labels
         new_bonds = [
             bd.slice_by_qindices(qids) for qids, bd in zip(qid_accessor, self.bonds)
         ]
-        print(qid_accessor)
         # filter out the block and qnindices:
         new_meta, selected_blk_ids = self.meta.select(qid_accessor)
         new_blocks = [self.blocks[blk_id] for blk_id in selected_blk_ids]
