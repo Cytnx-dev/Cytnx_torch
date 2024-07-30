@@ -78,3 +78,26 @@ def test_getitem():
     assert len(x.blocks) == 1
     assert x.meta.qn_indices_map.shape == (1, 3)
     assert np.all(x.meta.qn_indices_map[0] == [0, 1, 1])
+
+
+def test_backend_arg_propogate():
+    b1 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+    b2 = SymBond(
+        bond_type=BondType.IN,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 1]) >> 4],
+        syms=[U1(), Zn(n=2)],
+    )
+    b3 = SymBond(
+        bond_type=BondType.OUT,
+        qnums=[Qs([-1, 0]) >> 3, Qs([0, 0]) >> 4, Qs([-1, 1]) >> 5],
+        syms=[U1(), Zn(n=2)],
+    )
+
+    ut = UniTensor(labels=["a", "b", "c"], bonds=[b1, b2, b3], dtype=int)
+
+    for blk in ut.blocks:
+        blk.dtype == int
