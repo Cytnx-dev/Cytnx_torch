@@ -64,3 +64,10 @@ def test_set_item():
     assert x.bonds[0].bond_type == BondType.OUT
     assert x.bonds[1].bond_type == BondType.OUT
     assert torch.allclose(x.data, torch.arange(300).reshape(10, 30).to(float))
+
+
+def test_scalar_item():
+    ut = UniTensor(labels=[], bonds=[], dtype=float)
+
+    assert isinstance(ut, RegularUniTensor)
+    assert ut.item() == 0.0
