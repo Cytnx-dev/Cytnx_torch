@@ -96,22 +96,22 @@ class BlockUniTensorMeta:
 @dataclass
 class BlockUniTensor(AbstractUniTensor):
 
-    blocks: List[torch.Tensor] = field(default_factory=list)
-    meta: BlockUniTensorMeta = field(init=False)
+    blocks: List[torch.Tensor] = None
+    meta: Optional[BlockUniTensorMeta] = None
 
     def __post_init__(self):
-        # TODO check here, and also initialize torch tensor
 
-        bg = BlockGenerator(bonds=self.bonds)
+        if self.meta is None and self.blocks is None:  # recalculate meta
+            bg = BlockGenerator(bonds=self.bonds)
 
-        blocks = []
-        qn_indices_map = []
-        for qn_indices, block in bg:
-            if qn_indices is not None:
-                blocks.append(block)
-                qn_indices_map.append(qn_indices)
-        self.blocks = blocks
-        self.meta = BlockUniTensorMeta(qn_indices_map=np.array(qn_indices_map))
+            blocks = []
+            qn_indices_map = []
+            for qn_indices, block in bg:
+                if qn_indices is not None:
+                    blocks.append(block)
+                    qn_indices_map.append(qn_indices)
+            self.blocks = blocks
+            self.meta = BlockUniTensorMeta(qn_indices_map=np.array(qn_indices_map))
 
     def _repr_body_diagram(self) -> str:
         Nin = self.rowrank
@@ -158,6 +158,7 @@ class BlockUniTensor(AbstractUniTensor):
         return BlockUniTensor(
             **self._get_generic_meta(),
             blocks=[blk.contiguous() for blk in self.blocks],
+            meta=self.meta,
         )
 
     @property
@@ -181,7 +182,9 @@ class BlockUniTensor(AbstractUniTensor):
 
             new_blocks.append(grad_data)
 
-        return BlockUniTensor(**self._get_generic_meta(), blocks=new_blocks)
+        return BlockUniTensor(
+            **self._get_generic_meta(), blocks=new_blocks, meta=self.meta
+        )
 
     def backward(self) -> None:
         for blk in self.blocks:
@@ -201,12 +204,13 @@ class BlockUniTensor(AbstractUniTensor):
             bonds=new_bonds,
             backend_args=self.backend_args,
             blocks=new_blocks,
+            meta=self.meta.permute(args),
         )
 
     def relabel(self, old_labels: List[str], new_labels: List[str]) -> "BlockUniTensor":
 
         new_ut = BlockUniTensor(
-            **self._get_generic_meta(), blocks=self.blocks  # no clone
+            **self._get_generic_meta(), blocks=self.blocks, meta=self.meta  # no clone
         )
 
         new_ut._relabel(old_labels, new_labels)
@@ -218,6 +222,7 @@ class BlockUniTensor(AbstractUniTensor):
         return BlockUniTensor(
             **self._get_generic_meta(),
             blocks=[x.to(device=device, dtype=dtype) for x in self.blocks],
+            meta=self.meta,
         )
 
     @property
