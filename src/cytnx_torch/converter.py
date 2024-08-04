@@ -5,7 +5,8 @@ from abc import abstractmethod
 from .bond import Bond, SymBond
 
 if TYPE_CHECKING:
-    from .unitensor.entry import RegularUniTensor, BlockUniTensor, AbstractUniTensor
+    from .unitensor.entry import RegularUniTensor, BlockUniTensor
+    from .unitensor.base import AbstractUniTensor
 
 
 @dataclass

@@ -144,6 +144,10 @@ class AbstractUniTensor:
     def dtype(self) -> torch.dtype:
         raise NotImplementedError("not implement for abstract type trait.")
 
+    @property
+    def is_directional_bonds(self) -> bool:
+        return all([b.directional for b in self.bonds])
+
     @abstractmethod
     def _repr_body_diagram(self) -> str:
         raise NotImplementedError("not implement for abstract type trait.")

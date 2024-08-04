@@ -96,6 +96,10 @@ class BlockGenerator:
         else:
             return tuple()
 
+    @property
+    def is_directional_bonds(self) -> bool:
+        return True
+
     def _generate_meta(self) -> np.ndarray[int]:
         qnindices = [np.arange(len(bd._qnums)) for bd in self.bonds]
         qn_indices_map = np.meshgrid(*qnindices)
