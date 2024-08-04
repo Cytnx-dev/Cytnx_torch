@@ -74,6 +74,10 @@ class AbstractBond:
             out.bond_type = BondType(-self.bond_type.value)
             return out
 
+    @property
+    def directional(self) -> bool:
+        return self.bond_type != BondType.NONE
+
 
 @dataclass
 class Bond(AbstractBond):
