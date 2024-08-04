@@ -150,3 +150,51 @@ def test_getitem_diag_non_diag_access():
 
     assert x.is_diag is False
     assert x.data.shape == (2, 3)
+
+
+def test_grad():
+    b1 = Bond(dim=3, bond_type=BondType.IN)
+    b2 = Bond(dim=3, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b"], bonds=[b1, b2], dtype=float, is_diag=True)
+
+    grad_ut = ut.grad()
+
+    assert grad_ut.is_diag is True
+    assert grad_ut.data.shape == (3,)
+    assert grad_ut is not ut
+
+
+def test_diag_permute_dup_index():
+    b1 = Bond(dim=3, bond_type=BondType.IN)
+    b2 = Bond(dim=3, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b"], bonds=[b1, b2], dtype=float, is_diag=True)
+
+    with pytest.raises(ValueError):
+        ut.permute(0, 0)
+
+
+def test_diag_permute_invalid_index():
+    b1 = Bond(dim=3, bond_type=BondType.IN)
+    b2 = Bond(dim=3, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b"], bonds=[b1, b2], dtype=float, is_diag=True)
+
+    with pytest.raises(ValueError):
+        ut.permute(0, 2)
+
+    with pytest.raises(ValueError):
+        ut.permute(-1, 0)
+
+
+def test_diag_permute():
+    b1 = Bond(dim=3, bond_type=BondType.IN)
+    b2 = Bond(dim=3, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b"], bonds=[b1, b2], dtype=float, is_diag=True)
+
+    ut2 = ut.permute("b", "a")
+
+    assert ut2.labels == ["b", "a"]
+    assert ut2.data is ut.data

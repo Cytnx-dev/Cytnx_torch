@@ -72,6 +72,10 @@ class RegularUniTensorConverter(AbstractConverter):
     def _contract(
         self, is_lhs: bool, utensor: "RegularUniTensor"
     ) -> "RegularUniTensor":
+
+        if utensor.is_diag:
+            raise ValueError("error, cannot contract with diagonal tensor.")
+
         remaind_labels = [x for x in utensor.labels if x not in self.input_labels]
 
         p_labels = (

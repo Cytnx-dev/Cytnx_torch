@@ -142,6 +142,7 @@ class RegularUniTensor(AbstractUniTensor):
             raise ValueError("new_value should be torch.Tensor.")
 
         if self.is_diag:
+            # TODO
             raise ValueError("TODO setitem for diagonal tensor.")
 
         self.data[key] = new_value
@@ -183,15 +184,34 @@ class RegularUniTensor(AbstractUniTensor):
         if by_label:
             args = [self.labels.index(lbl) for lbl in args]
 
-        if self.is_diag:
-            raise ValueError("TODO permute for diagonal tensor")
-
         new_labels, new_bonds = self._get_permuted_meta(*args)
+
+        if self.is_diag:
+            # raise ValueError("TODO permute for diagonal tensor")
+            if len(args) != 2:
+                raise ValueError(
+                    f"invalid permutation. current tensor.rank=2, but got perm len(args)={len(args)}"
+                )
+
+            if len(set(args)) < 2:
+                raise ValueError(f"duplicate index. {args[0]}")
+
+            if not all([args[i] >= 0 and args[i] < 2 for i in range(2)]):
+                raise ValueError(
+                    f"invalid index for diagonal tensor. index must be 0 or 1, but got {args}"
+                )
+
+            new_data = self.data
+
+        else:
+            new_data = self.data.permute(*args)
+
         return RegularUniTensor(
             labels=new_labels,
             bonds=new_bonds,
             backend_args=self.backend_args,
-            data=self.data.permute(*args),
+            is_diag=self.is_diag,
+            data=new_data,
         )
 
     def as_matrix(
@@ -199,6 +219,11 @@ class RegularUniTensor(AbstractUniTensor):
     ) -> Tuple[
         "RegularUniTensor", RegularUniTensorConverter, RegularUniTensorConverter
     ]:
+        if self.is_diag:
+            raise ValueError(
+                "cannot convert to matrix. Diagonal tensor is already in matrix form"
+            )
+
         if self.rowrank < 1 or self.rowrank >= self.rank:
             raise ValueError(
                 "cannot convert to matrix. At least one bond need to be on row space and one bond need to be on col space."
