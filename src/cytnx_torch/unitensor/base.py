@@ -15,6 +15,7 @@ class AbstractUniTensor:
     labels: List[str]
     bonds: List[AbstractBond]
     backend_args: dict = field(default_factory=dict)
+    is_diag: bool = field(default=False)
     name: str = field(default="")
     rowrank: int = field(default=0)
 
@@ -31,6 +32,7 @@ class AbstractUniTensor:
             "backend_args": self.backend_args,
             "name": self.name,
             "rowrank": self.rowrank,
+            "is_diag": self.is_diag,
         }
 
     def __eq__(self, rhs: "AbstractUniTensor") -> bool:

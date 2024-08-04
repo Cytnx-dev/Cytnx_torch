@@ -4,6 +4,7 @@ from cytnx_torch.unitensor import UniTensor
 
 import torch
 import numpy as np
+import pytest
 
 
 def test_reg_ut():
@@ -92,3 +93,60 @@ def test_as_matrix():
 
     assert reconstructed_ut.labels == ["a", "b", "c", "d"]
     assert reconstructed_ut == ut
+
+
+def test_is_diag():
+    b1 = Bond(dim=3, bond_type=BondType.IN)
+    b2 = Bond(dim=3, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b"], bonds=[b1, b2], dtype=float, is_diag=True)
+
+    assert ut.is_diag is True
+    assert ut.data.shape == (3,)
+
+
+def test_is_diag_invalid():
+    b1 = Bond(dim=3, bond_type=BondType.IN)
+    b2 = Bond(dim=2, bond_type=BondType.OUT)
+
+    with pytest.raises(ValueError):
+        UniTensor(labels=["a", "b"], bonds=[b1, b2], dtype=float, is_diag=True)
+
+
+def test_init_from_torch_diag():
+    x = torch.arange(6)
+
+    ut = UniTensor.from_torch(x, labels=["a", "b"], is_diag=True)
+
+    assert ut.is_diag is True
+    assert ut.data.shape == (6,)
+
+
+def test_init_from_torch_diag_invalid():
+    x = torch.arange(6).reshape(2, 3)
+    with pytest.raises(ValueError):
+        UniTensor.from_torch(x, labels=["a", "b"], is_diag=True)
+
+
+def test_getitem_diag():
+    b1 = Bond(dim=3, bond_type=BondType.IN)
+    b2 = Bond(dim=3, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b"], bonds=[b1, b2], dtype=float, is_diag=True)
+
+    x = ut[:2, :2]
+
+    assert x.is_diag is True
+    assert x.data.shape == (2,)
+
+
+def test_getitem_diag_non_diag_access():
+    b1 = Bond(dim=3, bond_type=BondType.IN)
+    b2 = Bond(dim=3, bond_type=BondType.OUT)
+
+    ut = UniTensor(labels=["a", "b"], bonds=[b1, b2], dtype=float, is_diag=True)
+
+    x = ut[:2]
+
+    assert x.is_diag is False
+    assert x.data.shape == (2, 3)

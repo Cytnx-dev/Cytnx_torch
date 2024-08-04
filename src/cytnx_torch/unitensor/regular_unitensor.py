@@ -14,13 +14,25 @@ class RegularUniTensor(AbstractUniTensor):
     data: torch.Tensor = field(default=None)
 
     def __post_init__(self):
-        # check here, and also initialize torch tensor
-        if self.data is None:
-            self.data = torch.zeros(
-                size=[b.dim for b in self.bonds], **self.backend_args
-            )
+        if self.is_diag:
+            # check bond:
+            if len(self.bonds) != 2:
+                raise ValueError("diagonal tensor should have two bonds.")
 
-        pass
+            if self.bonds[0].dim != self.bonds[1].dim:
+                raise ValueError(
+                    "diagonal tensor should have two bonds with the same dimension."
+                )
+
+            if self.data is None:
+                self.data = torch.zeros(size=[self.bonds[0].dim], **self.backend_args)
+
+        else:
+            # check here, and also initialize torch tensor
+            if self.data is None:
+                self.data = torch.zeros(
+                    size=[b.dim for b in self.bonds], **self.backend_args
+                )
 
     def _repr_body_diagram(self) -> str:
         Nin = self.rowrank
@@ -83,13 +95,37 @@ class RegularUniTensor(AbstractUniTensor):
             else:
                 raise ValueError("key should be either int or slice.")
 
-        new_data = self.data[key]
+        new_diag = self.is_diag
+        if self.is_diag:
+            if len(accessor) != 2:
+                raise ValueError("diagonal tensor should have two bonds.")
 
-        assert len(remain_indices) == len(new_data.shape), "ERR, shape mismatch."
+            if accessor[0] != accessor[1]:
+                # flatten to dense tensor:
+                new_data = torch.diag(self.data)
+                new_data = new_data[key]
+                new_diag = False
+            else:
+                # keep as diag
+                new_data = self.data[key[0]]
+
+                if len(remain_indices) != 2:
+                    assert len(remain_indices) == len(
+                        new_data.shape
+                    ), "ERR, shape mismatch."
+
+        else:
+            new_data = self.data[key]
+
+        if new_diag is False:
+            assert len(remain_indices) == len(new_data.shape), "ERR, shape mismatch."
+            new_dims = new_data.shape
+        else:
+            new_dims = (new_data.shape[0], new_data.shape[0])
 
         new_bonds = [
             Bond(dim=dim, bond_type=self.bonds[remain_indices[i]].bond_type)
-            for i, dim in enumerate(new_data.shape)
+            for i, dim in enumerate(new_dims)
         ]
         new_labels = [self.labels[i] for i in remain_indices]
 
@@ -98,11 +134,15 @@ class RegularUniTensor(AbstractUniTensor):
             bonds=new_bonds,
             backend_args=self.backend_args,
             data=new_data,
+            is_diag=new_diag,
         )
 
     def __setitem__(self, key, new_value: torch.Tensor) -> None:
         if not isinstance(new_value, torch.Tensor):
             raise ValueError("new_value should be torch.Tensor.")
+
+        if self.is_diag:
+            raise ValueError("TODO setitem for diagonal tensor.")
 
         self.data[key] = new_value
 
@@ -129,7 +169,7 @@ class RegularUniTensor(AbstractUniTensor):
         grad_data = self.data.grad
 
         if grad_data is None:
-            grad_data = torch.Tensor(size=self.shape)
+            grad_data = torch.Tensor(size=self.data.shape)
 
         return RegularUniTensor(**self._get_generic_meta(), data=grad_data)
 
@@ -142,6 +182,9 @@ class RegularUniTensor(AbstractUniTensor):
 
         if by_label:
             args = [self.labels.index(lbl) for lbl in args]
+
+        if self.is_diag:
+            raise ValueError("TODO permute for diagonal tensor")
 
         new_labels, new_bonds = self._get_permuted_meta(*args)
         return RegularUniTensor(
